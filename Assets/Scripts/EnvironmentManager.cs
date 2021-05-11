@@ -15,6 +15,7 @@ public class EnvironmentManager : MonoBehaviour
 
     Texture2D _inputImage;
     List<GraphVoxel> _targets = new List<GraphVoxel>();
+    List<GraphVoxel> _pathVoxel = new List<GraphVoxel>();
 
 
     #endregion
@@ -72,7 +73,7 @@ public class EnvironmentManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             //CreateRandomPlot(10, 5, 1);
-            GenerateRandomPlotsAndSave(10,5,1,2,6);
+           
         }
 
         //clear the gird
@@ -315,11 +316,88 @@ public class EnvironmentManager : MonoBehaviour
         _voxelGrid.SetStatesFromImage(_inputImage);
     }
 
-    public void FindShortestPath()
+    public void FindShortestPath(Vector3Int start, Vector3Int end, int radius, Vector3Int voxelGrid)
     {
 
+        //a list to store the path voxel
+        List<Voxel> pathVoxels = new List<Voxel>();
+        FunctionColor pathColor = FunctionColor.White;
+        voxelGrid = _voxelGrid.GridSize;
+
+
+        //add the start and end voxel to list
+        if (Util.ValidateIndex(voxelGrid, start))
+        {
+
+            pathVoxels.Add(_voxelGrid.Voxels[start.x, start.y, start.z]);
+        }
+
+        else
+        {
+            pathVoxels = null;
+        }
+
+        for (int i = 0; i < radius; i++)
+        {
+
+            List<Voxel> availableVoxels = new List<Voxel>();
+
+            foreach (var voxel in pathVoxels)
+            {
+
+                //get the neighbors of path voxel
+                Voxel[] neighbors;
+
+                neighbors = voxel.GetFaceNeighboursXZ().ToArray();
+
+                foreach (var neighbour in neighbors)
+                {
+                    //check if is the available plot voxel
+
+                    //+ if color is blue(backyard area that allows to grow)
+                    if (neighbour.FColor == FunctionColor.Blue && neighbour.IsActive && Util.ValidateIndex(voxelGrid, neighbour.Index) && !pathVoxels.Contains(neighbour) && !availableVoxels.Contains(neighbour))
+                    {
+                        availableVoxels.Add(neighbour);
+                    }
+                }
+
+            }
+
+            if (availableVoxels.Count == 0) break;
+
+            // add these available voxels to growing voxels list
+            foreach (var availableVoxel in availableVoxels)
+            {
+                if (availableVoxel.FColor == FunctionColor.Blue)
+                {
+                    pathVoxels.Add(availableVoxel);
+                }
+
+            }
+        }
+
+        // set the plot color and quality
+        foreach (var voxel in pathVoxels)
+        {
+            if (voxel.FColor == FunctionColor.Blue)
+            {
+                voxel.FColor = FunctionColor.White;
+                voxel.Qname = ColorQuality.Plot;
+            }
+
+        }
+
     }
+
+
+}
+
+
+
+ 
+
     
 
+
     #endregion
-}
+
