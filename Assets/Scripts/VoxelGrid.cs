@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using EasyGraph;
 
 public class VoxelGrid
 {
@@ -16,6 +17,12 @@ public class VoxelGrid
     public Vector3 Corner;
     public float VoxelSize { get; private set; }
 
+    public UndirecteGraph<GraphVoxel, Edge<GraphVoxel>> Graph;
+    private List<Edge<GraphVoxel>> _edges;
+    public Dijkstra<GraphVoxel, Edge<GraphVoxel>> DijkstraGraph;
+
+
+  
     #endregion
 
     #region Constructors
@@ -33,7 +40,7 @@ public class VoxelGrid
         Origin = origin;
         VoxelSize = voxelSize;
 
-        Voxels = new Voxel[GridSize.x, GridSize.y, GridSize.z];
+        Voxels = new GraphVoxel[GridSize.x, GridSize.y, GridSize.z];
 
         for (int x = 0; x < GridSize.x; x++)
         {
@@ -84,6 +91,7 @@ public class VoxelGrid
         VoxelSize = voxelSize;
 
         Voxels = new Voxel[GridSize.x, GridSize.y, GridSize.z];
+        _edges = new List<Edge<GraphVoxel>>();
 
         for (int x = 0; x < GridSize.x; x++)
         {
@@ -99,6 +107,15 @@ public class VoxelGrid
                             1f,
                             createCollider: true,
                             parent: parent);
+
+                        if (x >0)
+                        {
+                            _edges.Add(new Edge<GraphVoxel>(Voxels[x, y, z] as GraphVoxel, Voxels[x - 1, y, z] as GraphVoxel));
+                        }
+                        if (z > 0)
+                        {
+                            _edges.Add(new Edge<GraphVoxel>(Voxels[x, y, z] as GraphVoxel, Voxels[x, y, z-1] as GraphVoxel));
+                        }
                     }
                     else
                     {
@@ -110,6 +127,10 @@ public class VoxelGrid
                 }
             }
         }
+
+        Graph = new UndirecteGraph<GraphVoxel, Edge<GraphVoxel>>(_edges);
+        DijkstraGraph = new Dijkstra<GraphVoxel, Edge<GraphVoxel>>(Graph);
+
 
 
         MakeFaces();
@@ -285,107 +306,65 @@ public class VoxelGrid
     #region Public Methods
 
 
+   
     /// <summary>
-    /// Tries to create a black blob from the
-    /// specified origin and with the specified size
+    /// Expand shortest path with determined radius
     /// </summary>
-    /// <param name="origin">The index of the origin</param>
-    /// <param name="radius">The radius of the blob in voxels</param>
-    /// <param name="picky">If the blob should skip voxels randomly as it expands</param>
-    /// <param name="flat">If the blob should be located on the first layer or use all</param>
+    /// <param name="path"></param>shortest path voxels
+    /// <param name="radius"></param>expanded radius
     /// <returns></returns>
-
-    public bool GrowPlot(Vector3Int origin, int radius, int height = 0)
+    public bool GrowPlot(List<GraphVoxel> path, int radius)
     {
 
-        //List<Vector3> growingVoxel
-        //A list to store the growing voxel
-        List<Voxel> growingVoxel = new List<Voxel>();
-
-        //Give them white coluor as plot
-        FunctionColor plotcolor = FunctionColor.White;
-
-        //check if the origin is valid and add it to voxel list
-        if (Util.ValidateIndex(GridSize, origin))
+        foreach (var voxel in path)
         {
-            growingVoxel.Add(Voxels[origin.x, height, origin.z]);
-        }
-        else return false;
+            List<Voxel> expandedVoxels = new List<Voxel>();
 
-        //Iterate through the neighboring layer within the radius
-        for (int i = 0; i < radius; i++)
-        {
-
-            List<Voxel> availableVoxels = new List<Voxel>();
-
-            foreach (var voxel in growingVoxel)
+            //Iterate through the neighboring layer within the radius
+            for (int i = 0; i < radius; i++)
             {
-                //Get neighbors in 2D or 3D
+                List<Voxel> availableVoxels = new List<Voxel>();
 
-                Voxel[] neighbors;
-
-
-                if (height == 0)
+                foreach (var eVoxel in expandedVoxels)
                 {
-                    neighbors = voxel.GetFaceNeighboursXZ().ToArray();
-
-                }
-                else
-                {
+                    //Get neighbors
+                    Voxel[] neighbors;
                     neighbors = voxel.GetFaceNeighbours().ToArray();
-                }
 
-                //Iterate each neighbors + and check if is available
-                foreach (var neighbour in neighbors)
-                {
-                    //check if is the available plot voxel
-
-                    //+ if color is blue(backyard area that allows to grow)
-                    if (neighbour.FColor == FunctionColor.Blue && neighbour.IsActive && Util.ValidateIndex(GridSize, neighbour.Index) && !growingVoxel.Contains(neighbour) && !availableVoxels.Contains(neighbour))
+                    //Iterate each neighbors + and check if is available
+                    foreach (var neighbour in neighbors)
                     {
-                        availableVoxels.Add(neighbour);
+
+                        //+ if color is blue(backyard area that allows to grow)
+                        if (neighbour.FColor == FunctionColor.Blue && neighbour.IsActive && Util.ValidateIndex(GridSize, neighbour.Index) && !expandedVoxels.Contains(neighbour) && !availableVoxels.Contains(neighbour))
+                        {
+                            availableVoxels.Add(neighbour);
+                        }
                     }
+
                 }
 
-            }
+                if (availableVoxels.Count == 0) break;
 
-            if (availableVoxels.Count == 0) break;
-
-            //add these available voxels to growing voxels list
-            foreach (var availableVoxel in availableVoxels)
-            {
-                if (availableVoxel.FColor == FunctionColor.Blue)
+                //add these available voxels to expanded voxels list
+                foreach (var availableVoxel in availableVoxels)
                 {
-                    growingVoxel.Add(availableVoxel);
+                    expandedVoxels.Add(availableVoxel);
                 }
-
             }
-        }
 
-        // set the plot color and quality
-        foreach (var voxel in growingVoxel)
-        {
-            if (voxel.FColor == FunctionColor.Blue)
+            // set the plot color and quality
+            foreach (var gvoxel in expandedVoxels)
             {
-                voxel.FColor = plotcolor;
+                path.Add(voxel);
+                voxel.FColor = FunctionColor.White;
                 voxel.Qname = ColorQuality.Plot;
+                
             }
-
         }
-
+        
         return true;
     }
-
-    // A method to store the possible voxel after xxx evaluation result  + animate one by one
-
-
-    // A method to check voxel with xxx evaluation result  + animate one by one
-    public bool AvailablePlotVoxel()
-    {
-
-        return true;
-    }
-
 
     /// <summary>
     /// Reads an image pixel data and set the color pixels and corresponding label/quality to the grid
@@ -476,6 +455,8 @@ public class VoxelGrid
     }
 
 
+
+
     // Generate image from Grid, voxel to pixel, read the plot on the top layer(ovverlapping) FROM VOXEL DATA TO IMAGE
     public Texture2D ImageFromGrid(int layer = 0, bool overlapping = false)
     {
@@ -516,6 +497,13 @@ public class VoxelGrid
         gridImage.Apply();
         return gridImage;
     }
+
+    public List<Edge<GraphVoxel>> GetEdgesOfTypes(FunctionColor color) => _edges.Where(e => e.Source.FColor == color && e.Target.FColor == color).ToList();
+    public List<Edge<GraphVoxel>> GetEdgesByTypes(FunctionColor color1, FunctionColor color2) => _edges.Where(
+        e => (e.Source.FColor == color1 || e.Source.FColor == color2) &&
+        (e.Target.FColor == color1 || e.Target.FColor == color2)).ToList();
+
+
 
     #endregion
 }
