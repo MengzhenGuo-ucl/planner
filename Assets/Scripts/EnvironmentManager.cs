@@ -14,9 +14,9 @@ public class EnvironmentManager : MonoBehaviour
     bool _showVoids = true;
 
     Texture2D _inputImage;
-    List<GraphVoxel> _targets = new List<GraphVoxel>();
-    List<GraphVoxel> _pathVoxel = new List<GraphVoxel>();
-    List<GraphVoxel> _path;
+    List<GVoxel> _targets = new List<GVoxel>();
+    List<GVoxel> _pathVoxel = new List<GVoxel>();
+    List<GVoxel> _path;
 
     #endregion
 
@@ -33,7 +33,7 @@ public class EnvironmentManager : MonoBehaviour
 
 
         _voxelGrid = new VoxelGrid(_inputImage, Vector3.zero, 1, 1, parent: this.transform);
-        _path = new List<GraphVoxel>();
+        _path = new List<GVoxel>();
 
       
 
@@ -72,13 +72,23 @@ public class EnvironmentManager : MonoBehaviour
             SetClickedAsTarget();
         }
 
+        //Analyse sunlight
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            foreach (GVoxel voxel in _path)
+            {
+                voxel.RaycastSunScore();
+                Debug.Log($"Score is {voxel.LightScore}");
+            }
+
+
+        }
+
         //Expand path
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            _voxelGrid.GrowPlot(_path, 5);
 
-            Debug.Log(_path.Count);
-            
+            _path = _voxelGrid.GrowPlot(_path, 5);
 
         }
 
@@ -165,12 +175,12 @@ public class EnvironmentManager : MonoBehaviour
             {
                 //get its name(index)
 
-                GraphVoxel selected = null;
+                GVoxel selected = null;
                 string voxelName = objectHit.name;
                 var index = voxelName.Split('_').Select(v => int.Parse(v)).ToArray();
 
                 //reture its index
-                selected = (GraphVoxel)_voxelGrid.Voxels[index[0], index[1], index[2]];
+                selected = (GVoxel)_voxelGrid.Voxels[index[0], index[1], index[2]];
 
                 //string[] voxelName = objectHit.name.Split('_');
 
@@ -209,18 +219,18 @@ public class EnvironmentManager : MonoBehaviour
 
     public void CreatePaths()
     {
-        Queue<GraphVoxel> targetPool = new Queue<GraphVoxel>(_targets);
+        Queue<GVoxel> targetPool = new Queue<GVoxel>(_targets);
         var edges = _voxelGrid.GetEdgesByTypes(FunctionColor.Blue, FunctionColor.White);
         Debug.Log(edges.Count);
 
-        UndirecteGraph<GraphVoxel, Edge<GraphVoxel>> graph = new UndirecteGraph<GraphVoxel, Edge<GraphVoxel>>(edges);
-        Dijkstra<GraphVoxel, Edge<GraphVoxel>> dijkstra = new Dijkstra<GraphVoxel, Edge<GraphVoxel>>(graph);
+        UndirecteGraph<GVoxel, Edge<GVoxel>> graph = new UndirecteGraph<GVoxel, Edge<GVoxel>>(edges);
+        Dijkstra<GVoxel, Edge<GVoxel>> dijkstra = new Dijkstra<GVoxel, Edge<GVoxel>>(graph);
         _path.AddRange(dijkstra.GetShortestPath(targetPool.Dequeue(), targetPool.Dequeue()));
 
 
         while (targetPool.Count > 0)
         {
-            GraphVoxel nextVoxel = targetPool.Dequeue();
+            GVoxel nextVoxel = targetPool.Dequeue();
 
             SetNextShortestPath(nextVoxel, dijkstra);         
 
@@ -234,11 +244,11 @@ public class EnvironmentManager : MonoBehaviour
     }
 
 
-    void SetNextShortestPath(GraphVoxel targetVoxel, Dijkstra<GraphVoxel, Edge<GraphVoxel>> dijkstra)
+    void SetNextShortestPath(GVoxel targetVoxel, Dijkstra<GVoxel, Edge<GVoxel>> dijkstra)
     {
         dijkstra.DijkstraCalculateWeights(targetVoxel);
-        GraphVoxel closestVoxel = _path.MinBy(v => dijkstra.VertexWeight(v));
-        List<GraphVoxel> newpath = new List<GraphVoxel>();
+        GVoxel closestVoxel = _path.MinBy(v => dijkstra.VertexWeight(v));
+        List<GVoxel> newpath = new List<GVoxel>();
 
         newpath.AddRange(dijkstra.GetShortestPath(targetVoxel, closestVoxel));
         newpath.Remove(closestVoxel);

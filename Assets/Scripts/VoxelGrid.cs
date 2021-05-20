@@ -17,9 +17,9 @@ public class VoxelGrid
     public Vector3 Corner;
     public float VoxelSize { get; private set; }
 
-    public UndirecteGraph<GraphVoxel, Edge<GraphVoxel>> Graph;
-    private List<Edge<GraphVoxel>> _edges;
-    public Dijkstra<GraphVoxel, Edge<GraphVoxel>> DijkstraGraph;
+    public UndirecteGraph<GVoxel, Edge<GVoxel>> Graph;
+    private List<Edge<GVoxel>> _edges;
+    public Dijkstra<GVoxel, Edge<GVoxel>> DijkstraGraph;
     
 
 
@@ -41,7 +41,7 @@ public class VoxelGrid
         Origin = origin;
         VoxelSize = voxelSize;
 
-        Voxels = new GraphVoxel[GridSize.x, GridSize.y, GridSize.z];
+        Voxels = new GVoxel[GridSize.x, GridSize.y, GridSize.z];
 
         for (int x = 0; x < GridSize.x; x++)
         {
@@ -92,7 +92,7 @@ public class VoxelGrid
         VoxelSize = voxelSize;
 
         Voxels = new Voxel[GridSize.x, GridSize.y, GridSize.z];
-        _edges = new List<Edge<GraphVoxel>>();
+        _edges = new List<Edge<GVoxel>>();
 
         for (int x = 0; x < GridSize.x; x++)
         {
@@ -102,7 +102,7 @@ public class VoxelGrid
                 {
                     if (y == 0)
                     {
-                        Voxels[x, y, z] = new GraphVoxel(
+                        Voxels[x, y, z] = new GVoxel(
                             new Vector3Int(x, y, z),
                             this,
                             1f,
@@ -111,16 +111,16 @@ public class VoxelGrid
 
                         if (x >0)
                         {
-                            _edges.Add(new Edge<GraphVoxel>(Voxels[x, y, z] as GraphVoxel, Voxels[x - 1, y, z] as GraphVoxel));
+                            _edges.Add(new Edge<GVoxel>(Voxels[x, y, z] as GVoxel, Voxels[x - 1, y, z] as GVoxel));
                         }
                         if (z > 0)
                         {
-                            _edges.Add(new Edge<GraphVoxel>(Voxels[x, y, z] as GraphVoxel, Voxels[x, y, z-1] as GraphVoxel));
+                            _edges.Add(new Edge<GVoxel>(Voxels[x, y, z] as GVoxel, Voxels[x, y, z-1] as GVoxel));
                         }
                     }
                     else
                     {
-                        Voxels[x, y, z] = new GraphVoxel(
+                        Voxels[x, y, z] = new GVoxel(
                             new Vector3Int(x, y, z),
                             this,
                             1f);
@@ -129,8 +129,8 @@ public class VoxelGrid
             }
         }
 
-        Graph = new UndirecteGraph<GraphVoxel, Edge<GraphVoxel>>(_edges);
-        DijkstraGraph = new Dijkstra<GraphVoxel, Edge<GraphVoxel>>(Graph);
+        Graph = new UndirecteGraph<GVoxel, Edge<GVoxel>>(_edges);
+        DijkstraGraph = new Dijkstra<GVoxel, Edge<GVoxel>>(Graph);
 
 
 
@@ -314,57 +314,52 @@ public class VoxelGrid
     /// <param name="path"></param>shortest path voxels
     /// <param name="radius"></param>expanded radius
     /// <returns></returns>
-    public bool GrowPlot(List<GraphVoxel> path, int radius)
+    public List<GVoxel> GrowPlot(List<GVoxel> path, int radius)
     {
+        List<GVoxel> expandedVoxels = new List<GVoxel>();
 
         foreach (var voxel in path)
         {
-            List<Voxel> expandedVoxels = new List<Voxel>();
-
+            List<GVoxel> availableVoxels = new List<GVoxel>();
+            availableVoxels.Add(voxel);
             //Iterate through the neighboring layer within the radius
             for (int i = 0; i < radius; i++)
             {
-                List<Voxel> availableVoxels = new List<Voxel>();
+                List<GVoxel> tempVoxels = new List<GVoxel>();
 
-                foreach (var eVoxel in expandedVoxels)
+                foreach (var aVoxel in availableVoxels)
                 {
                     //Get neighbors
-                    Voxel[] neighbors;
-                    neighbors = voxel.GetFaceNeighbours().ToArray();
+                    Voxel[] neighbours;
+                    neighbours = aVoxel.GetFaceNeighbours().ToArray();
 
                     //Iterate each neighbors + and check if is available
-                    foreach (var neighbour in neighbors)
+                    foreach (GVoxel neighbour in neighbours)
                     {
-
                         //+ if color is blue(backyard area that allows to grow)
-                        if (neighbour.FColor == FunctionColor.Blue && neighbour.IsActive && Util.ValidateIndex(GridSize, neighbour.Index) && !expandedVoxels.Contains(neighbour) && !availableVoxels.Contains(neighbour))
+                        if (neighbour.FColor == FunctionColor.Blue 
+                            && neighbour.IsActive /*&& Util.ValidateIndex(GridSize, neighbour.Index)*/ 
+                            && !availableVoxels.Contains(neighbour)
+                            && !tempVoxels.Contains(neighbour))
                         {
-                            availableVoxels.Add(neighbour);
+                            tempVoxels.Add(neighbour);
                         }
                     }
-
+                    Debug.Log(tempVoxels.Count);
                 }
-
-                if (availableVoxels.Count == 0) break;
-
-                //add these available voxels to expanded voxels list
-                foreach (var availableVoxel in availableVoxels)
-                {
-                    expandedVoxels.Add(availableVoxel);
-                }
+                availableVoxels.AddRange(tempVoxels);
             }
-
-            // set the plot color and quality
-            foreach (var gvoxel in expandedVoxels)
-            {
-                path.Add(voxel);
-                voxel.FColor = FunctionColor.White;
-                voxel.Qname = ColorQuality.Plot;
-                
-            }
+            expandedVoxels.AddRange(availableVoxels);
         }
-        
-        return true;
+        // set the plot color and quality
+        foreach (GVoxel gvoxel in expandedVoxels)
+        {
+            path.Add(gvoxel);
+            gvoxel.FColor = FunctionColor.White;
+            gvoxel.Qname = ColorQuality.Plot;
+
+        }
+        return expandedVoxels;
     }
 
     /// <summary>
@@ -384,7 +379,7 @@ public class VoxelGrid
 
                 //read voxel as its child:graphvoxel
 
-                GraphVoxel voxel = (GraphVoxel)Voxels[x, 0, z];
+                GVoxel voxel = (GVoxel)Voxels[x, 0, z];
                 //read RGB channel
                 float[] colorScores = new float[8]
                 {
@@ -499,8 +494,8 @@ public class VoxelGrid
         return gridImage;
     }
 
-    public List<Edge<GraphVoxel>> GetEdgesOfTypes(FunctionColor color) => _edges.Where(e => e.Source.FColor == color && e.Target.FColor == color).ToList();
-    public List<Edge<GraphVoxel>> GetEdgesByTypes(FunctionColor color1, FunctionColor color2) => _edges.Where(
+    public List<Edge<GVoxel>> GetEdgesOfTypes(FunctionColor color) => _edges.Where(e => e.Source.FColor == color && e.Target.FColor == color).ToList();
+    public List<Edge<GVoxel>> GetEdgesByTypes(FunctionColor color1, FunctionColor color2) => _edges.Where(
         e => (e.Source.FColor == color1 || e.Source.FColor == color2) &&
         (e.Target.FColor == color1 || e.Target.FColor == color2)).ToList();
 
