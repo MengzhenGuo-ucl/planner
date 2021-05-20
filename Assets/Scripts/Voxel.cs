@@ -100,15 +100,15 @@ public class Voxel : IEquatable<Voxel>
         var s = _voxelGrid.GridSize;
 
         if (x != s.x - 1) yield return _voxelGrid.Voxels[x + 1, y, z];
-        //if (x != 0) yield return _voxelGrid.Voxels[x - 1, y, z];
+        if (x != 0) yield return _voxelGrid.Voxels[x - 1, y, z];
 
         if (y != s.y - 1) yield return _voxelGrid.Voxels[x, y + 1, z];
         if (y != 0) yield return _voxelGrid.Voxels[x, y - 1, z];
 
         if (z != s.z - 1) yield return _voxelGrid.Voxels[x, y, z + 1];
-        //if (z != 0) yield return _voxelGrid.Voxels[x, y, z - 1];
+        if (z != 0) yield return _voxelGrid.Voxels[x, y, z - 1];
 
-        if (z != 0 && x != 0) yield return _voxelGrid.Voxels[x + 1, y, z + 1];
+
     }
 
     /// <summary>

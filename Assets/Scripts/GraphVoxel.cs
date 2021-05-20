@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using QuickGraph;
 
 public class GraphVoxel:Voxel
 {
@@ -12,6 +13,7 @@ public class GraphVoxel:Voxel
 
     #region Public field
     public bool IsTarget;
+    
     #endregion
 
     #region Construct
@@ -95,6 +97,53 @@ public class GraphVoxel:Voxel
 
         }
     }
+
+
+    public float RaycastSunScore()
+    {
+        float lightscore = 0;
+        float maxRayLength = 10f;
+        //Make a circle with all direcitons
+        List<Vector3> directions = new List<Vector3>()
+        {
+           
+            // 360 degree  - 8 directions
+            new Vector3(1,0,0),
+            new Vector3(.5f,0.5f,0),
+            new Vector3(0,1,0),
+            new Vector3(-0.5f,.5f,0),
+            new Vector3(-1,0,0),
+            new Vector3(-.5f,0.5f,0),
+            new Vector3(0,-1,0),
+            new Vector3(0.5f,-.5f,0),
+
+    };
+
+        foreach (var direction in directions)
+        {
+            RaycastHit hit;
+            int layerMask;
+             
+            //Make sure only the voxels that represent physical opbjects can hit (either disable colliders or put the other voxels into the ignoreraycast layer)
+            if (Physics.Raycast(VoxelCollider.transform.position, direction, out hit, maxRayLength, layerMask = 9))
+            {
+                //get distance from centre of the voxel to the hit  
+                var distance = hit.distance;
+
+                //add distance to lightscore
+                lightscore += distance;
+            }
+            else
+            {
+                lightscore += maxRayLength;
+            }
+
+        }
+
+        lightscore /= directions.Count;
+        return lightscore;
+    }
+
 
     #endregion
 }
