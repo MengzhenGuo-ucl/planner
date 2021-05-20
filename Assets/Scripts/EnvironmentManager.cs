@@ -1,8 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Diagnostics;
 using System.Linq;
-using EasyGraph;
 
 public class EnvironmentManager : MonoBehaviour
 {
@@ -14,8 +14,7 @@ public class EnvironmentManager : MonoBehaviour
     bool _showVoids = true;
 
     Texture2D _inputImage;
-    List<GraphicVoxel> _targets = new List<GraphicVoxel>();
-    List<GraphicVoxel> _path;
+    List<GraphVoxel> _targets = new List<GraphVoxel>();
 
 
     #endregion
@@ -33,8 +32,7 @@ public class EnvironmentManager : MonoBehaviour
 
         
         _voxelGrid = new VoxelGrid(_inputImage,Vector3.zero,1, 1, parent: this.transform);
-        _path = new List<GraphicVoxel>();
-
+        
 
 
         // Set the random engine's seed
@@ -91,6 +89,8 @@ public class EnvironmentManager : MonoBehaviour
     //随机生成一些plot然后再测试,基于几个点的最短路径
     void GenerateRandomPlotsAndSave(int area, int maxVoxles, int minVoxels, int minRadius,int maxRadius)
     {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
 
         string saveFolder = "PlotsTest";
 
@@ -111,6 +111,9 @@ public class EnvironmentManager : MonoBehaviour
 
             ImageReadWrite.SaveImage(resizedImage, $"{saveFolder}/Grid_{i}");
         }
+        stopwatch.Stop();
+
+        print($"Took {stopwatch.ElapsedMilliseconds} milliseconds to genetate {area} images");
     }
 
     // method to creat each random plot
@@ -272,12 +275,12 @@ public class EnvironmentManager : MonoBehaviour
             {
                 //get its name(index)
 
-                GraphicVoxel selected = null;
+                GraphVoxel selected = null;
                 string voxelName = objectHit.name;
                 var index = voxelName.Split('_').Select(v => int.Parse(v)).ToArray();
 
                 //reture its index
-                selected = (GraphicVoxel)_voxelGrid.Voxels[index[0], index[1], index[2]];
+                selected = (GraphVoxel)_voxelGrid.Voxels[index[0], index[1], index[2]];
 
                 //string[] voxelName = objectHit.name.Split('_');
 
@@ -312,40 +315,11 @@ public class EnvironmentManager : MonoBehaviour
         _voxelGrid.SetStatesFromImage(_inputImage);
     }
 
-
-    public void CreatePaths()
+    public void FindShortestPath()
     {
-        Queue<GraphicVoxel> targetPool = new Queue<GraphicVoxel>(_targets);
-        var edges = _voxelGrid.GetEdgesByTypes(FunctionColor.Blue, FunctionColor.White);
-        Debug.Log(edges.Count);
 
-        UndirecteGraph<GraphicVoxel, Edge<GraphicVoxel>> graph = new UndirecteGraph<GraphicVoxel, Edge<GraphicVoxel>>(edges);
-        Dijkstra<GraphicVoxel, Edge<GraphicVoxel>> dijkstra = new Dijkstra<GraphicVoxel, Edge<GraphicVoxel>>(graph);
-        _path.AddRange(dijkstra.GetShortestPath(targetPool.Dequeue(), targetPool.Dequeue()));
-
-        while (targetPool.Count > 0)
-        {
-            GraphicVoxel nextVoxel = targetPool.Dequeue();
-            SetNextShortestPath(nextVoxel, dijkstra);
-        }
-        Debug.Log(_path.Count);
-
-        foreach (var voxel in _path)
-        {
-            voxel.FColor = FunctionColor.White;
-        }
     }
-
-    void SetNextShortestPath(GraphicVoxel targetVoxel, Dijkstra<GraphicVoxel, Edge<GraphicVoxel>> dijkstra)
-    {
-        dijkstra.DijkstraCalculateWeights(targetVoxel);
-        GraphicVoxel closestVoxel = _path.MinBy(v => dijkstra.VertexWeight(v));
-        List<GraphicVoxel> newpath = new List<GraphicVoxel>();
-        
-        newpath.AddRange(dijkstra.GetShortestPath(targetVoxel, closestVoxel));
-        newpath.Remove(closestVoxel);
-        _path.AddRange(newpath);
-    }
+    
 
     #endregion
 }

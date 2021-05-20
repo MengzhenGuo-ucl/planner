@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using EasyGraph;
 
 public class VoxelGrid
 {
@@ -16,10 +15,6 @@ public class VoxelGrid
     public Vector3 Origin;
     public Vector3 Corner;
     public float VoxelSize { get; private set; }
-
-    
-    List<Edge<GraphicVoxel>> _edges;
-
 
     #endregion
 
@@ -39,7 +34,6 @@ public class VoxelGrid
         VoxelSize = voxelSize;
 
         Voxels = new Voxel[GridSize.x, GridSize.y, GridSize.z];
-
 
         for (int x = 0; x < GridSize.x; x++)
         {
@@ -90,7 +84,6 @@ public class VoxelGrid
         VoxelSize = voxelSize;
 
         Voxels = new Voxel[GridSize.x, GridSize.y, GridSize.z];
-        _edges = new List<Edge<GraphicVoxel>>();
 
         for (int x = 0; x < GridSize.x; x++)
         {
@@ -100,19 +93,16 @@ public class VoxelGrid
                 {
                     if (y == 0)
                     {
-                        Voxels[x, y, z] = new GraphicVoxel(
+                        Voxels[x, y, z] = new GraphVoxel(
                             new Vector3Int(x, y, z),
                             this,
                             1f,
                             createCollider: true,
                             parent: parent);
-
-                        if (x > 0) _edges.Add(new Edge<GraphicVoxel>(Voxels[x, y, z] as GraphicVoxel, Voxels[x - 1, y, z] as GraphicVoxel));
-                        if (z > 0) _edges.Add(new Edge<GraphicVoxel>(Voxels[x, y, z] as GraphicVoxel, Voxels[x, y, z - 1] as GraphicVoxel));
                     }
                     else
                     {
-                        Voxels[x, y, z] = new GraphicVoxel(
+                        Voxels[x, y, z] = new GraphVoxel(
                             new Vector3Int(x, y, z),
                             this,
                             1f);
@@ -121,8 +111,6 @@ public class VoxelGrid
             }
         }
 
-        //Graph = new UndirecteGraph<GraphicVoxel, Edge<GraphicVoxel>>(_edges);
-        //DijkstraGraph = new Dijkstra<GraphicVoxel, Edge<GraphicVoxel>>(Graph);
 
         MakeFaces();
         MakeCorners();
@@ -416,7 +404,7 @@ public class VoxelGrid
 
                 //read voxel as its child:graphvoxel
 
-                GraphicVoxel voxel = (GraphicVoxel)Voxels[x, 0, z];
+                GraphVoxel voxel = (GraphVoxel)Voxels[x, 0, z];
                 //read RGB channel
                 float[] colorScores = new float[8]
                 {
@@ -510,7 +498,7 @@ public class VoxelGrid
                 Color co;
                 if (voxel.FColor == FunctionColor.White) co = Color.white;
                 else if (voxel.FColor == FunctionColor.Red) co = Color.red;
-
+               
                 else if (voxel.FColor == FunctionColor.Blue) co = Color.blue;
                 else if (voxel.FColor == FunctionColor.Yellow) co = Color.yellow;
                 else if (voxel.FColor == FunctionColor.Green) co = Color.green;
@@ -528,11 +516,6 @@ public class VoxelGrid
         gridImage.Apply();
         return gridImage;
     }
-
-    public List<Edge<GraphicVoxel>> GetEdgesOfType(FunctionColor color) => _edges.Where(e => e.Source.FColor == color && e.Target.FColor == color).ToList();
-    public List<Edge<GraphicVoxel>> GetEdgesByTypes(FunctionColor color1, FunctionColor color2) => _edges.Where(
-        e => (e.Source.FColor == color1 || e.Source.FColor == color2) && 
-        (e.Target.FColor == color1 || e.Target.FColor == color2)).ToList();
 
     #endregion
 }
