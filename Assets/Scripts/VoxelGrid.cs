@@ -20,6 +20,7 @@ public class VoxelGrid
     public UndirecteGraph<GraphVoxel, Edge<GraphVoxel>> Graph;
     private List<Edge<GraphVoxel>> _edges;
     public Dijkstra<GraphVoxel, Edge<GraphVoxel>> DijkstraGraph;
+    
 
 
   
@@ -503,6 +504,12 @@ public class VoxelGrid
         e => (e.Source.FColor == color1 || e.Source.FColor == color2) &&
         (e.Target.FColor == color1 || e.Target.FColor == color2)).ToList();
 
+
+    public void SunlightAnalysis()
+    {
+
+
+    }
 
 
     #endregion

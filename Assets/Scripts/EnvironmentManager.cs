@@ -78,6 +78,7 @@ public class EnvironmentManager : MonoBehaviour
             _voxelGrid.GrowPlot(_path, 5);
 
             Debug.Log(_path.Count);
+            
 
         }
 

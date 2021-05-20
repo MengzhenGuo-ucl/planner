@@ -13,6 +13,7 @@ public class GraphVoxel:Voxel
 
     #region Public field
     public bool IsTarget;
+    
     #endregion
 
     #region Construct
@@ -142,5 +143,7 @@ public class GraphVoxel:Voxel
         lightscore /= directions.Count;
         return lightscore;
     }
+
+
     #endregion
 }
