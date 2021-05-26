@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using EasyGraph;
+using UnityEngine.UI;
 
 public class EnvironmentManager : MonoBehaviour
 {
@@ -17,8 +18,11 @@ public class EnvironmentManager : MonoBehaviour
     List<GVoxel> _targets = new List<GVoxel>();
     List<GVoxel> _pathVoxel = new List<GVoxel>();
     List<GVoxel> _path;
+    public Slider slider;
+    
 
     public int radius;
+    List<GVoxel> _originalPath;
 
     #endregion
 
@@ -230,6 +234,8 @@ public class EnvironmentManager : MonoBehaviour
             voxel.FColor = FunctionColor.White;           
         }
 
+        _originalPath = _path;
+
     }
 
 
@@ -246,15 +252,15 @@ public class EnvironmentManager : MonoBehaviour
     }
 
 
-    public void AdjustRadius(int newRadius)
+    public void AdjustRadius()
     {
-
-        _path = _voxelGrid.GrowPlot(_path, radius);
-        radius = newRadius;
+        radius = (int)slider.value;
+        _path = _voxelGrid.GrowPlot(_originalPath, radius);
+        
 
     }
 
-
+    
 
 }
 

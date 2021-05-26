@@ -243,8 +243,8 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1569446695}
         m_TargetAssemblyTypeName: EnvironmentManager, Assembly-CSharp
-        m_MethodName: CreatePaths
-        m_Mode: 1
+        m_MethodName: AdjustRadius
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -970,16 +970,16 @@ MonoBehaviour:
   m_HandleRect: {fileID: 291900975}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 2
+  m_MaxValue: 10
   m_WholeNumbers: 1
-  m_Value: 0
+  m_Value: 1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1569446695}
         m_TargetAssemblyTypeName: EnvironmentManager, Assembly-CSharp
         m_MethodName: AdjustRadius
-        m_Mode: 3
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -1150,6 +1150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16e4c0d6f9dc42a49ab5555b4d98509b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  slider: {fileID: 1339124419}
   radius: 5
 --- !u!4 &1569446696
 Transform:
