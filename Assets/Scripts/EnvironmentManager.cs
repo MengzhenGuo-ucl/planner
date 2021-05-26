@@ -18,6 +18,8 @@ public class EnvironmentManager : MonoBehaviour
     List<GVoxel> _pathVoxel = new List<GVoxel>();
     List<GVoxel> _path;
 
+    public int radius;
+
     #endregion
 
     #region Unity Standard Methods
@@ -29,7 +31,7 @@ public class EnvironmentManager : MonoBehaviour
         //_voxelGrid = new VoxelGrid(gridSize, Vector3.zero, 1, parent: this.transform);
 
         //Initialise the voxel grid from image
-        _inputImage = Resources.Load<Texture2D>("Data/map2");
+        _inputImage = Resources.Load<Texture2D>("Data/map3");
 
 
         _voxelGrid = new VoxelGrid(_inputImage, Vector3.zero, 1, 1, parent: this.transform);
@@ -44,6 +46,9 @@ public class EnvironmentManager : MonoBehaviour
 
     void Update()
     {
+        //expand area
+
+        
         // Draw the voxels according to their Function Colors
         DrawVoxels();
 
@@ -53,19 +58,6 @@ public class EnvironmentManager : MonoBehaviour
             _showVoids = !_showVoids;
         }
 
-        ////drawing white pixel
-        //if (Input.GetMouseButton(0))
-        //{
-        //    var initialVoxel = StartVoxel();
-
-        //    if (initialVoxel != null)
-        //    {
-        //        //print(initialVoxel.Index);
-        //        print(initialVoxel.Qname);
-        //        _voxelGrid.GrowPlot(initialVoxel.Index,1);
-
-        //    }
-        //}
 
         if (Input.GetMouseButton(0))
         {
@@ -85,18 +77,15 @@ public class EnvironmentManager : MonoBehaviour
         }
 
         //Expand path
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-
-            _path = _voxelGrid.GrowPlot(_path, 5);
-
-        }
+        
 
         //clear the gird
         if (Input.GetKeyDown(KeyCode.R))
         {
             _voxelGrid.ClearGrid();
         }
+
+        
     }
 
     #endregion
@@ -257,49 +246,17 @@ public class EnvironmentManager : MonoBehaviour
     }
 
 
-    //public void GrowPath(List<GraphVoxel> path, int radius)
-    //{
+    public void AdjustRadius(int newRadius)
+    {
 
-    //    path = new List<GraphVoxel>();
-    //    FunctionColor fcolor = FunctionColor.White;
+        _path = _voxelGrid.GrowPlot(_path, radius);
+        radius = newRadius;
 
-    //    for (int i = 0; i < radius; i++)
-    //    {
-    //        List<Voxel> newVoxels = new List<Voxel>();
-
-    //        foreach (var voxel in path)
-    //        {
-    //            Voxel[] neighbours;
-    //            neighbours = voxel.GetFaceNeighbours().ToArray();
-
-    //            foreach (var neighbour in neighbours)
-    //            {
-    //                if (neighbour.IsActive && neighbour.FColor == FunctionColor.Blue && !path.Contains(neighbour) && !newVoxel.Contains(neighbour))
-    //                {
-    //                    newVoxels.Add(neighbour);
-    //                }
-    //            }
+    }
 
 
-    //        }
-    //        if (newVoxels.Count == 0) break;
-
-
-    //    }
-
-
-    //}
 
 }
-
-
-
-
-
-
-
-
-
 
 
 

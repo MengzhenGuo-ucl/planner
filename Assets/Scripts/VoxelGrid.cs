@@ -355,8 +355,8 @@ public class VoxelGrid
         foreach (GVoxel gvoxel in expandedVoxels)
         {
             path.Add(gvoxel);
-            gvoxel.FColor = FunctionColor.White;
-            gvoxel.Qname = ColorQuality.Plot;
+            gvoxel.FColor = FunctionColor.Yellow;
+            gvoxel.Qname = ColorQuality.Street;
 
         }
         return expandedVoxels;
