@@ -11,6 +11,7 @@ public class Voxel : IEquatable<Voxel>
     public List<Face> Faces = new List<Face>(6);
     public Vector3 Center => (Index + _voxelGrid.Origin) * _size;
     public bool IsActive;
+    public bool IsAlive;
 
 
     public FunctionColor FColor;
@@ -108,6 +109,39 @@ public class Voxel : IEquatable<Voxel>
         if (z != s.z - 1) yield return _voxelGrid.Voxels[x, y, z + 1];
         if (z != 0) yield return _voxelGrid.Voxels[x, y, z - 1];
 
+    }
+
+    public Voxel[] GetEightNeighbours()
+    {
+        Voxel[] result = new Voxel[8];
+
+        int x = Index.x;
+        int y = Index.y;
+        int z = Index.z;
+        var s = _voxelGrid.GridSize;
+
+        if (x != s.x - 1) result[0] = _voxelGrid.Voxels[x + 1, y, z];
+        else result[0] = null;
+
+        if (x != 0) result[1] = _voxelGrid.Voxels[x - 1, y, z];
+        else result[1] = null;
+
+        if (z != s.z - 1) result[2] = _voxelGrid.Voxels[x, y, z + 1];
+        else result[2] = null;
+
+        if (z != 0) result[3] = _voxelGrid.Voxels[x, y, z - 1];
+        else result[3] = null;
+
+        if (z != 0 && x != 0 && x != s.x - 1 && z != s.z - 1)
+        {
+            result[4] = _voxelGrid.Voxels[x - 1, y, z - 1];
+            result[5] = _voxelGrid.Voxels[x - 1, y, z + 1];
+            result[6] = _voxelGrid.Voxels[x + 1, y, z + 1];
+            result[7] = _voxelGrid.Voxels[x + 1, y, z - 1];
+        }
+        else result[4 & 5 & 6 & 7] = null;
+
+        return result;
 
     }
 

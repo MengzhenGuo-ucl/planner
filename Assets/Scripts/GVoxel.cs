@@ -7,32 +7,47 @@ public class GVoxel : Voxel
 {
     #region Private field
 
-    private float _state;
+
 
     #endregion
 
     #region Public field
+
+    public int _state = 0;
     public bool IsTarget;
+    public bool IsAlive;
     public float LightScore {get; private set;}
+
+    //Position of the cell
+    public int[] position;
     
+
+    //Reference to the cell's SpriteRenderer
+    SpriteRenderer sprRend;
+
+    Color[] col = new Color[]
+    {
+        Color.blue,
+        Color.green,
+        Color.black,
+        Color.white
+    };
+
+    float age = 0;
+    int mode = 0;
+    public int currentRule = 0;
+
+    //Those colours are used when the rule colour mode is on
+
+
+
     #endregion
 
     #region Construct
 
-    public GVoxel(Vector3Int index, VoxelGrid voxelGrid, float state, bool createCollider = false, Transform parent = null)
+    public GVoxel(Vector3Int index, VoxelGrid voxelGrid, int state, bool createCollider = false, Transform parent = null)
     {
-        //Index = index;
-        //_voxelGrid = voxelGrid;
-        //_size = voxelGrid.VoxelSize;
-
-        //_state = state;
-
-        //_PlotVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //_PlotVoxel.transform.position = (_voxelGrid.Origin + Index) * _size;
-        //_PlotVoxel.transform.localScale *= _voxelGrid.VoxelSize * 1;
-        //_PlotVoxel.name = $"Voxel_{Index.x}_{Index.y}_{Index.z}";
-        //_PlotVoxel.GetComponent<MeshRenderer>().material = Resources.Load<Material>("Materials/Plot");
-
+       
         Index = index;
         _voxelGrid = voxelGrid;
         _size = _voxelGrid.VoxelSize;
@@ -47,32 +62,11 @@ public class GVoxel : Voxel
             VoxelCollider.transform.localPosition = new Vector3(Index.x, Index.y, Index.z) * _size;
             VoxelCollider.name = $"{Index.x}_{Index.y}_{Index.z}";
             VoxelCollider.tag = "Voxel";
+            IsAlive = false;
+       
         }
-
-
-        //}
-
-        //public GraphVoxel(Vector3Int index, VoxelGrid voxelGrid, float state, float sizeFactor)
-        //{
-        //    Index = index;
-        //    _voxelGrid = voxelGrid;
-        //    _size = _voxelGrid.VoxelSize;
-        //    FColor = FunctionColor.White;
-
-        //    _state = state;
-
-        //    _voxelGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //    _voxelGO.transform.position = (_voxelGrid.Origin + Index) * _size;
-        //    _voxelGO.transform.localScale *= _voxelGrid.VoxelSize * sizeFactor;
-        //    _voxelGO.name = $"Voxel_{Index.x}_{Index.y}_{Index.z}";
-        //    _voxelGO.GetComponent<MeshRenderer>().material = Resources.Load<Material>("Materials/Plot");
-        //}
-      
-
-
-
-
     }
+
     #endregion
 
 
@@ -91,12 +85,86 @@ public class GVoxel : Voxel
         {
             FColor = FunctionColor.White;
             VoxelCollider.gameObject.layer = LayerMask.NameToLayer("Plot");
+
         }
         else
         {
             FColor = FunctionColor.Blue;
 
         }
+    }
+
+    public void SetState(int newStatus)
+    {
+        _state = newStatus;
+        
+
+        if (_state == 1)
+        {
+            //alive
+            FColor = FunctionColor.Yellow;
+            IsAlive = true;
+
+            VoxelCollider.tag = "AliveVoxel";
+        }
+        else
+        {
+            //dead
+            FColor = FunctionColor.Blue;
+            IsAlive = false;
+
+            VoxelCollider.tag = "DeadVoxel";
+        }
+
+    }
+
+    public void ChangeStatus()
+    {
+        
+        if (IsAlive == true)
+        {
+            SetState(0);
+        }
+
+        else if (IsAlive == false)
+        {
+            SetState(1);
+        }
+    }
+
+  
+    public GVoxel[] GetEightNeighbours()
+    {
+        GVoxel[] result = new GVoxel[8];
+
+        int x = Index.x;
+        int y = Index.y;
+        int z = Index.z;
+        var s = _voxelGrid.GridSize;
+
+        if (x != s.x - 1) result[0] = (GVoxel)_voxelGrid.Voxels[x + 1, y, z];
+        else result[0] = null;
+
+        if (x != 0) result[1] = (GVoxel)_voxelGrid.Voxels[x - 1, y, z];
+        else result[1] = null;
+
+        if (z != s.z - 1) result[2] = (GVoxel)_voxelGrid.Voxels[x, y, z + 1];
+        else result[2] = null;
+
+        if (z != 0) result[3] = (GVoxel)_voxelGrid.Voxels[x, y, z - 1];
+        else result[3] = null;
+
+        if (z != 0 && x != 0 && x != s.x - 1 && z != s.z - 1)
+        {
+            result[4] = (GVoxel)_voxelGrid.Voxels[x - 1, y, z - 1];
+            result[5] = (GVoxel)_voxelGrid.Voxels[x - 1, y, z + 1];
+            result[6] = (GVoxel)_voxelGrid.Voxels[x + 1, y, z + 1];
+            result[7] = (GVoxel)_voxelGrid.Voxels[x + 1, y, z - 1];
+        }
+        else result[4 & 5 & 6 & 7] = null;
+
+        return result;
+
     }
 
 
@@ -144,6 +212,45 @@ public class GVoxel : Voxel
         LightScore /= directions.Count;
         return LightScore;
     }
+
+    //public void SetMode(int m)
+    //{
+    //    mode = m;
+    //    ChangeColour();
+    //}
+
+    //public void ChangeColour()
+    //{
+    //    switch (mode)
+
+    //    {
+    //        case 0:
+    //            sprRend.color = new Color(_state, _state, _state);
+    //            break;
+    //        case 1:
+    //            if (_state == 1)
+    //            {
+    //                age += 0.03f;
+    //            }
+    //            sprRend.color = new Color(0, age, age);
+    //            break;
+    //        case 2:
+    //            if (_state == 1)
+    //            {
+    //                age += 0.03f;
+    //                sprRend.color = new Color(0, age + _state, age + _state);
+    //            }
+    //            else
+    //            {
+    //                //age -= 0.01f;
+    //                sprRend.color = new Color(0, age, age);
+    //            }
+    //            break;
+    //        case 3:
+    //            sprRend.color = col[currentRule];
+    //            break;
+    //    }
+    //}
 
 
     #endregion

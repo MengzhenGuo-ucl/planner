@@ -10,7 +10,7 @@ public class EnvironmentManager : MonoBehaviour
     #region Fields and properties
 
     VoxelGrid _voxelGrid;
-    int _randomSeed = 666;
+    public int _randomPercent = 50;
 
     bool _showVoids = true;
 
@@ -35,24 +35,21 @@ public class EnvironmentManager : MonoBehaviour
         //_voxelGrid = new VoxelGrid(gridSize, Vector3.zero, 1, parent: this.transform);
 
         //Initialise the voxel grid from image
-        _inputImage = Resources.Load<Texture2D>("Data/map3");
+        _inputImage = Resources.Load<Texture2D>("Data/map10");
 
 
         _voxelGrid = new VoxelGrid(_inputImage, Vector3.zero, 1, 1, parent: this.transform);
         _path = new List<GVoxel>();
 
-      
-
 
         // Set the random engine's seed
-        Random.InitState(_randomSeed);
+        Random.InitState(_randomPercent);
+       
     }
 
     void Update()
     {
-        //expand area
-
-        
+               
         // Draw the voxels according to their Function Colors
         DrawVoxels();
 
@@ -84,12 +81,36 @@ public class EnvironmentManager : MonoBehaviour
         
 
         //clear the gird
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            VoxeliseImage();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            CreatePaths();
+
+        }
+
         if (Input.GetKeyDown(KeyCode.R))
         {
             _voxelGrid.ClearGrid();
+
         }
 
-        
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            SetRandomAliveVoxels(10);
+            //_voxelGrid.RandomVoxels(3);
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            _voxelGrid.UpdateGrid();
+          
+        }
+
+
     }
 
     #endregion
@@ -109,13 +130,14 @@ public class EnvironmentManager : MonoBehaviour
                 Vector3 pos = (Vector3)voxel.Index * _voxelGrid.VoxelSize + transform.position;
 
                 if (voxel.FColor == FunctionColor.Red) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.red);
+                else if (voxel.FColor == FunctionColor.Orange) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.black);
                 else if (voxel.FColor == FunctionColor.Yellow) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.yellow);
                 else if (voxel.FColor == FunctionColor.Green) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.green);
                 else if (voxel.FColor == FunctionColor.Cyan) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.cyan);
                 else if (voxel.FColor == FunctionColor.Magenta) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.magenta);
                 else if (voxel.FColor == FunctionColor.Blue) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.blue);
                 else if (voxel.FColor == FunctionColor.White) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.white);
-                else if (voxel.FColor == FunctionColor.Gray) Drawing.DrawCube(pos, _voxelGrid.VoxelSize, Color.gray);
+                
                 else if (_showVoids && voxel.Index.y == 0)
                     Drawing.DrawTransparentCube(pos, _voxelGrid.VoxelSize);
             }
@@ -208,8 +230,30 @@ public class EnvironmentManager : MonoBehaviour
         _voxelGrid.SetStatesFromImage(_inputImage);
     }
 
+    #region Cellular Autonoma 
+
+    public void SetRandomAliveVoxels(int PercentageAlive)
+    {
+        int numberAlive = _voxelGrid.GridSize.x * _voxelGrid.GridSize.z * PercentageAlive / 100;
+
+        for (int i = 0; i < numberAlive; i++)
+        {
+            int x = Random.Range(0, _voxelGrid.GridSize.x);
+            int z = Random.Range(0, _voxelGrid.GridSize.z);
+
+            _voxelGrid.RandomVoxels(numberAlive);
+
+            if (_voxelGrid.Voxels[x, 0, z].IsAlive) i--;
+            _voxelGrid.Voxels[x, 0, z].IsAlive = true;
+        }
+
+    }
+
+    #endregion
 
 
+
+    #region Plot growing and area adjusting method
     public void CreatePaths()
     {
         Queue<GVoxel> targetPool = new Queue<GVoxel>(_targets);
@@ -256,11 +300,12 @@ public class EnvironmentManager : MonoBehaviour
     {
         radius = (int)slider.value;
         _path = _voxelGrid.GrowPlot(_originalPath, radius);
-        
 
     }
 
-    
+    #endregion
+
+
 
 }
 

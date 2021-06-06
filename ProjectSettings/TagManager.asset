@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Voxel
+  - AliveVoxel
+  - DeadVoxel
   layers:
   - Default
   - TransparentFX

@@ -20,10 +20,15 @@ public class VoxelGrid
     public UndirecteGraph<GVoxel, Edge<GVoxel>> Graph;
     private List<Edge<GVoxel>> _edges;
     public Dijkstra<GVoxel, Edge<GVoxel>> DijkstraGraph;
+
+    public int state;
+    public Vector3Int Index;
+    public int currentRule = 1;
     
 
 
-  
+
+
     #endregion
 
     #region Constructors
@@ -105,7 +110,7 @@ public class VoxelGrid
                         Voxels[x, y, z] = new GVoxel(
                             new Vector3Int(x, y, z),
                             this,
-                            1f,
+                            0,
                             createCollider: true,
                             parent: parent);
 
@@ -123,7 +128,7 @@ public class VoxelGrid
                         Voxels[x, y, z] = new GVoxel(
                             new Vector3Int(x, y, z),
                             this,
-                            1f);
+                            0);
                     }
                 }
             }
@@ -306,8 +311,214 @@ public class VoxelGrid
 
     #region Public Methods
 
+    //Initiate some random voxels and set as alive
+    public void RandomVoxels(int amount)
+    {
+        int x = Random.Range(0, GridSize.x);
+        int z = Random.Range(0, GridSize.z);
 
-   
+        List<GVoxel> RanVoxel = new List<GVoxel>();
+
+        for (int i = 0; i < amount; i++)
+        {
+            Vector3Int idx = new Vector3Int(x, 0, z);
+
+            if (Util.ValidateIndex(GridSize,idx))
+            {
+                var voxel = Voxels[x, 0, z];
+
+                if (voxel.IsActive && voxel.FColor == FunctionColor.Blue)
+                {
+                    RanVoxel.Add((GVoxel)voxel);
+                }
+            }
+            //var RanVoxels= GetVoxels().Where(v => v.IsActive && v.FColor == FunctionColor.Blue);
+        }
+        foreach (GVoxel ranV in RanVoxel)
+        {
+            //ranV.FColor = FunctionColor.White;
+            //ranV.IsAlive = true;
+            ranV.SetState(1);
+          
+        }
+
+    }
+
+    public void ResetGrid(bool alive)
+    {
+        foreach (GVoxel voxel in Voxels)
+        {
+            voxel.IsAlive = alive;
+
+        }
+    }
+
+    public void UpdateGrid()
+    {
+        for (int x = 0; x < GridSize.x; x++)
+        {
+            for (int z = 0; z < GridSize.z; z++)
+            {
+
+                GOLRules((GVoxel)Voxels[x, 0, z]);
+
+
+                //foreach (GVoxel voxel in Voxels)
+                //{
+                //    voxel.ChangeStatus();
+                //}
+            }
+        }
+    }
+
+    private void GOLRules(GVoxel tempVoxel)
+    {
+        int numOfAliveNeighbours;
+
+        //GVoxel AliveVoxel = GetVoxels().Where(v => v.IsAlive) as GVoxel;
+        //tempVoxel = AliveVoxel.GetEightNeighbours();
+
+        numOfAliveNeighbours = GetNumberOfAliveNeighbours(tempVoxel.GetEightNeighbours().ToList());
+
+        if (numOfAliveNeighbours < 1) tempVoxel.ChangeStatus();
+        else if (numOfAliveNeighbours <= 4) tempVoxel.ChangeStatus();
+        else if (numOfAliveNeighbours > 4) tempVoxel.ChangeStatus();
+
+        Debug.Log(numOfAliveNeighbours);
+
+
+    }
+
+    private int GetNumberOfAliveNeighbours(List<GVoxel> neighbours)
+    {
+        int numOfAliveNeighbours = 0;
+
+        for (int x = 0; x < GridSize.x; x++)
+        {
+            for (int z = 0; z < GridSize.z; z++)
+
+            {
+                
+                GVoxel AliveVoxel = GetVoxels().Where(v => v.IsAlive) as GVoxel;
+
+
+                foreach (var vox in neighbours)
+                {
+                    
+                    if (vox == AliveVoxel) numOfAliveNeighbours++;
+                }
+
+            }
+        }
+        return numOfAliveNeighbours;
+
+    }
+
+    public IEnumerable<GVoxel> GetEightNeighbours()
+    {
+
+        int x = Index.x;
+        int y = Index.y;
+        int z = Index.z;
+        var s = GridSize;
+
+        if (x != s.x - 1) yield return(GVoxel)Voxels[x + 1, y, z];
+
+        if (x != 0) yield return (GVoxel)Voxels[x - 1, y, z];
+
+        if (z != s.z - 1) yield return(GVoxel)Voxels[x, y, z + 1];
+
+        if (z != 0) yield return (GVoxel)Voxels[x, y, z - 1];
+
+        if (z != 0 && x != 0 && x != s.x - 1 && z != s.z - 1)
+        {
+            yield return (GVoxel)Voxels[x - 1, y, z - 1];
+            yield return (GVoxel)Voxels[x - 1, y, z + 1];
+            yield return (GVoxel)Voxels[x + 1, y, z + 1];
+            yield return (GVoxel)Voxels[x + 1, y, z - 1];
+        }
+
+    }
+
+    void UpdateStates()
+    {
+        //loop through all voxel in the blue area
+        for (int x = 0; x < GridSize.x; x++)
+        {
+            for (int z = 0; z < GridSize.z; z++)
+            {
+                //Get current state of the voxel
+
+                GVoxel voxel = (GVoxel)Voxels[x,0,z];
+
+                voxel.SetState(state);
+
+                int rl = currentRule;
+
+                //Initial result of the update is the previous state of the cell
+                int result = state;
+
+                //Get the living neighbour count of current cell
+                int count = GetLivingNeighbours(x, z);
+
+                //Check the rules and apply the correct state based on the result
+                if (state == 1 && count < 2)
+                {
+                    result = 0;
+                    rl = 0;
+                }
+                if (state == 1 && (count == 2 || count == 3))
+                {
+                    result = 1;
+                    rl = 1;
+                }
+                if (state == 1 && count > 3)
+                {
+                    result = 0;
+                    rl = 2;
+                }
+                if (state == 0 && count == 3)
+                {
+                    result = 1;
+                    rl = 3;
+                }
+
+
+                //states[x, y] = result;
+                //rule[x, y] = rl;
+
+
+
+            }
+        }
+
+    }
+
+    int GetLivingNeighbours(int x, int y)
+    {
+        int count = 0;
+
+        //
+        for (int i = -1; i < 2; i++)
+        {
+            for (int j = -1; j < 2; j++)
+            {
+                //The way of wrapping the grid on X and Y
+                //Based on The Coding Train video about the CA
+                int col = (x + i + GridSize.x) % GridSize.x;
+                int row = (y + j + GridSize.z) % GridSize.z;
+
+                //If the cell is alive add 1, if it's dead the state is 0 so nothing happens
+                //count += [col, row].state;
+            }
+        }
+        //Remove the current cell from the count
+        //count -= cells[x, y].state;
+
+        return count;
+    }
+
+
     /// <summary>
     /// Expand shortest path with determined radius
     /// </summary>
@@ -390,7 +601,7 @@ public class VoxelGrid
                 Mathf.Abs(pixel.r - 0) + Mathf.Abs(pixel.g - 1) + Mathf.Abs(pixel.b - 0),//Green
                 Mathf.Abs(pixel.r - 1) + Mathf.Abs(pixel.g - 1) + Mathf.Abs(pixel.b - 0),//Yellow
                 Mathf.Abs(pixel.r - 1) + Mathf.Abs(pixel.g - 1) + Mathf.Abs(pixel.b - 1),//White
-                Mathf.Abs(pixel.r - .5f) + Mathf.Abs(pixel.g - .5f) + Mathf.Abs(pixel.b - .5f)//Gray
+                Mathf.Abs(pixel.r - 1f) + Mathf.Abs(pixel.g - 0.6f) + Mathf.Abs(pixel.b - 0.0f)//Orange
               
                 };
                 //Get the colors right
@@ -427,7 +638,7 @@ public class VoxelGrid
                         else if (voxel.FColor == FunctionColor.Green) voxel.VoxelCollider.gameObject.layer = LayerMask.NameToLayer("Tree");
                         else if (voxel.FColor == FunctionColor.White) voxel.VoxelCollider.gameObject.layer = LayerMask.NameToLayer("Plot");
                         else if (voxel.FColor == FunctionColor.Cyan) voxel.VoxelCollider.gameObject.layer = LayerMask.NameToLayer("LandTexture");
-                        else if (voxel.FColor == FunctionColor.Gray) voxel.VoxelCollider.gameObject.layer = LayerMask.NameToLayer("SmallBuilding");
+                        else if (voxel.FColor == FunctionColor.Orange) voxel.VoxelCollider.gameObject.layer = LayerMask.NameToLayer("SmallBuilding");
                         else if (voxel.FColor == FunctionColor.Empty) voxel.VoxelCollider.gameObject.layer = LayerMask.NameToLayer("EmptyLand");
 
                     }
@@ -481,7 +692,7 @@ public class VoxelGrid
                 else if (voxel.FColor == FunctionColor.Green) co = Color.green;
                 else if (voxel.FColor == FunctionColor.Cyan) co = Color.cyan;
                 else if (voxel.FColor == FunctionColor.Magenta) co = Color.magenta;
-                else if (voxel.FColor == FunctionColor.Gray) co = Color.gray;
+                else if (voxel.FColor == FunctionColor.Orange) co = Color.gray;
                 else co = new Color(1.0f, 0.64f, 0f); //orange  rgb value/max255
 
                 gridImage.SetPixel(i, j, co);
@@ -524,7 +735,7 @@ public enum FunctionColor
     Magenta = 4,
     Blue = 5,
     White = 6,
-    Gray = 7
+    Orange = 7
 
 }
 
