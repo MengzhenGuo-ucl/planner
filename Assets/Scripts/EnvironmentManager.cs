@@ -22,6 +22,10 @@ public class EnvironmentManager : MonoBehaviour
     
 
     public int radius;
+    public float Maxdistance;
+    public float Mindistance;
+
+
     List<GVoxel> _originalPath;
 
     #endregion
@@ -68,17 +72,15 @@ public class EnvironmentManager : MonoBehaviour
         //Analyse sunlight
         if (Input.GetKeyDown(KeyCode.L))
         {
-            foreach (GVoxel voxel in _path)
-            {
-                voxel.RaycastSunScore();
-                Debug.Log($"Score is {voxel.LightScore}");
-            }
-
-
+            OcclusionControl(18.0f);
+        }
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            AccessibilityControl(18.8f,10);
         }
 
         //Expand path
-        
+
 
         //clear the gird
         if (Input.GetKeyDown(KeyCode.V))
@@ -100,14 +102,8 @@ public class EnvironmentManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.C))
         {
-            SetRandomAliveVoxels(10);
-            //_voxelGrid.RandomVoxels(3);
-        }
-
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            _voxelGrid.UpdateGrid();
-          
+            //SetRandomAliveVoxels(1);
+            SetRandomVoxels(3);
         }
 
 
@@ -173,6 +169,14 @@ public class EnvironmentManager : MonoBehaviour
 
     #region Public Method
 
+    //UI Bottom
+    public void VoxeliseImage()
+    {
+        _voxelGrid.SetStatesFromImage(_inputImage);
+    }
+
+    #region start voxel
+
     private void SetClickedAsTarget()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -197,16 +201,6 @@ public class EnvironmentManager : MonoBehaviour
                 //reture its index
                 selected = (GVoxel)_voxelGrid.Voxels[index[0], index[1], index[2]];
 
-                //string[] voxelName = objectHit.name.Split('_');
-
-                //int x = int.Parse(voxelName[1]);
-                //int y = int.Parse(voxelName[2]);
-                //int z = int.Parse(voxelName[3]);
-
-                //Vector3Int ind = new Vector3Int(x, y, z);
-
-                //GraphVoxel voxel = (GraphVoxel)_voxelGrid.Voxels[ind.x, ind.y, ind.z];
-
                 selected.SetAsTarget();
 
                 //add selected target voxel to the list
@@ -224,36 +218,54 @@ public class EnvironmentManager : MonoBehaviour
         }
     }
 
-    //UI Bottom
-    public void VoxeliseImage()
+    public void SetRandomVoxels(int amount)
     {
-        _voxelGrid.SetStatesFromImage(_inputImage);
-    }
+        int x = Random.Range(0, _voxelGrid.GridSize.x);
+        int z = Random.Range(0, _voxelGrid.GridSize.z);
 
-    #region Cellular Autonoma 
+        List<GVoxel> RanVoxel = new List<GVoxel>();
 
-    public void SetRandomAliveVoxels(int PercentageAlive)
-    {
-        int numberAlive = _voxelGrid.GridSize.x * _voxelGrid.GridSize.z * PercentageAlive / 100;
-
-        for (int i = 0; i < numberAlive; i++)
+        for (int i = 0; i < amount; i++)
         {
-            int x = Random.Range(0, _voxelGrid.GridSize.x);
-            int z = Random.Range(0, _voxelGrid.GridSize.z);
+            Vector3Int idx = new Vector3Int(x, 0, z);
 
-            _voxelGrid.RandomVoxels(numberAlive);
+            if (Util.ValidateIndex(_voxelGrid.GridSize, idx))
+            {
+                var voxel = _voxelGrid.Voxels[x, 0, z];
 
-            if (_voxelGrid.Voxels[x, 0, z].IsAlive) i--;
-            _voxelGrid.Voxels[x, 0, z].IsAlive = true;
+                if (voxel.IsActive && voxel.FColor == FunctionColor.Blue)
+                {
+                    RanVoxel.Add((GVoxel)voxel);
+
+                }
+            }
+            //var RanVoxels= GetVoxels().Where(v => v.IsActive && v.FColor == FunctionColor.Blue);
+        }
+        foreach (GVoxel ranV in RanVoxel)
+        {
+            //ranV.FColor = FunctionColor.White;
+            //ranV.IsAlive = true;
+            ranV.SetState(1);
+            ranV.SetAsTarget();
+
+            if (ranV.IsTarget)
+            {
+                _targets.Add(ranV);
+
+            }
+            else
+            {
+                _targets.Remove(ranV);
+            }
+
         }
 
     }
 
     #endregion
 
-
-
     #region Plot growing and area adjusting method
+
     public void CreatePaths()
     {
         Queue<GVoxel> targetPool = new Queue<GVoxel>(_targets);
@@ -269,13 +281,13 @@ public class EnvironmentManager : MonoBehaviour
         {
             GVoxel nextVoxel = targetPool.Dequeue();
 
-            SetNextShortestPath(nextVoxel, dijkstra);         
+            SetNextShortestPath(nextVoxel, dijkstra);
 
         }
         Debug.Log(_path.Count);
         foreach (var voxel in _path)
         {
-            voxel.FColor = FunctionColor.White;           
+            voxel.FColor = FunctionColor.White;
         }
 
         _originalPath = _path;
@@ -305,11 +317,83 @@ public class EnvironmentManager : MonoBehaviour
 
     #endregion
 
+    public void OcclusionControl(float OcDis)
+    {
+        var PlotVoxels2 = _voxelGrid.GetVoxels().Where(v => v.IsActive && v.VoxelCollider.tag == "PlotVoxel");
+
+
+        foreach (GVoxel plotVV in PlotVoxels2)
+        {
+            plotVV.RaycastSunScore();
+
+            float[] allScore = { plotVV.LightScore };
+
+            float Min = Mathf.Min(allScore);
+
+            if (plotVV.LightScore > /*Min + */ OcDis)
+            {
+                plotVV.SetState(1);
+
+            }
+            else
+            {
+                plotVV.SetState(0);
+                plotVV.FColor = FunctionColor.Blue;
+            }
+            Debug.Log($"Score is {plotVV.LightScore}");
+            Debug.Log($"Min is {Min}");
+
+        }
+    }
+
+    public void AdjustOcclusion()
+    {
+        Maxdistance = (float)slider.value;
+        
+        OcclusionControl(Maxdistance);
+
+    }
+
+    public void AccessibilityControl(float Maxdis, int PercentageReduce)
+    {
+        
+
+        var PlotVoxels = _voxelGrid.GetVoxels().Where(v => v.IsActive && v.VoxelCollider.tag == "PlotVoxel");
+
+        int numReduce = PlotVoxels.Count() * PercentageReduce / 100;
+
+        foreach (GVoxel plotV in PlotVoxels)
+        {
+            plotV.RaycastSunScore();
+
+            if (plotV.LightScore > Maxdis)
+            {
+                plotV.SetState(0);
+                plotV.FColor = FunctionColor.Blue;
+            }
+
+            //Debug.Log($"Score is {plotV.LightScore}");
+        }
+
+    }
+
+    public void AdjustAccessibility()
+    {
+        Maxdistance = (float)slider.value;
+        AccessibilityControl(Maxdistance,10);
+
+    }
+
+    #endregion
+
+
+
+
 
 
 }
 
 
 
-#endregion
+
 

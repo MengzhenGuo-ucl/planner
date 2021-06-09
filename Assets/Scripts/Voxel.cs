@@ -111,39 +111,6 @@ public class Voxel : IEquatable<Voxel>
 
     }
 
-    public Voxel[] GetEightNeighbours()
-    {
-        Voxel[] result = new Voxel[8];
-
-        int x = Index.x;
-        int y = Index.y;
-        int z = Index.z;
-        var s = _voxelGrid.GridSize;
-
-        if (x != s.x - 1) result[0] = _voxelGrid.Voxels[x + 1, y, z];
-        else result[0] = null;
-
-        if (x != 0) result[1] = _voxelGrid.Voxels[x - 1, y, z];
-        else result[1] = null;
-
-        if (z != s.z - 1) result[2] = _voxelGrid.Voxels[x, y, z + 1];
-        else result[2] = null;
-
-        if (z != 0) result[3] = _voxelGrid.Voxels[x, y, z - 1];
-        else result[3] = null;
-
-        if (z != 0 && x != 0 && x != s.x - 1 && z != s.z - 1)
-        {
-            result[4] = _voxelGrid.Voxels[x - 1, y, z - 1];
-            result[5] = _voxelGrid.Voxels[x - 1, y, z + 1];
-            result[6] = _voxelGrid.Voxels[x + 1, y, z + 1];
-            result[7] = _voxelGrid.Voxels[x + 1, y, z - 1];
-        }
-        else result[4 & 5 & 6 & 7] = null;
-
-        return result;
-
-    }
 
     /// <summary>
     /// Get the neighbouring voxels at each face, if it exists
@@ -203,7 +170,6 @@ public class Voxel : IEquatable<Voxel>
     }
 
 
-
     /// <summary>
     /// Activates the visibility of this voxel
     /// </summary>
@@ -213,36 +179,6 @@ public class Voxel : IEquatable<Voxel>
     }
 
 
-    public float RaycastSunScore()
-    {
-        float lightscore = 0;
-        float maxRayLength = 10f;
-        //Make a circle with all direcitons
-        List<Vector3> directions = new List<Vector3>()
-        {
-            new Vector3(1,0,0),
-            new Vector3(.5f,.5f,0)
-
-    };
-
-        foreach (var direction in directions)
-        {
-            RaycastHit hit;
-            //Make sure only the voxels that represent physical opbjects can hit (either disable colliders or put the other voxels into the ignoreraycast layer)
-            if (Physics.Raycast(VoxelCollider.transform.position, direction, out hit, maxRayLength)) 
-            {
-                //get distance from centre of the voxel to the hit
-                //add distance to lightscore
-            }
-            else
-            {
-                lightscore += maxRayLength;
-            }
-        }
-
-        lightscore /= directions.Count;
-        return lightscore;
-    }
     #endregion
 
     #region Equality checks

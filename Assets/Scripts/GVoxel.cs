@@ -7,38 +7,14 @@ public class GVoxel : Voxel
 {
     #region Private field
 
-
-
     #endregion
 
     #region Public field
 
     public int _state = 0;
     public bool IsTarget;
-    public bool IsAlive;
+    public bool IsPlot;
     public float LightScore {get; private set;}
-
-    //Position of the cell
-    public int[] position;
-    
-
-    //Reference to the cell's SpriteRenderer
-    SpriteRenderer sprRend;
-
-    Color[] col = new Color[]
-    {
-        Color.blue,
-        Color.green,
-        Color.black,
-        Color.white
-    };
-
-    float age = 0;
-    int mode = 0;
-    public int currentRule = 0;
-
-    //Those colours are used when the rule colour mode is on
-
 
 
     #endregion
@@ -103,17 +79,17 @@ public class GVoxel : Voxel
         {
             //alive
             FColor = FunctionColor.Yellow;
-            IsAlive = true;
+            IsPlot = true;
 
-            VoxelCollider.tag = "AliveVoxel";
+            VoxelCollider.tag = "PlotVoxel";
         }
-        else
+        else if(_state == 0)
         {
             //dead
             FColor = FunctionColor.Blue;
-            IsAlive = false;
+            IsPlot = false;
 
-            VoxelCollider.tag = "DeadVoxel";
+            VoxelCollider.tag = "Voxel";
         }
 
     }
@@ -171,7 +147,7 @@ public class GVoxel : Voxel
     public float RaycastSunScore()
     {
         LightScore = 0;
-        float maxRayLength = 10f;
+        float maxRayLength = 20f;
         //Make a circle with all direcitons
         List<Vector3> directions = new List<Vector3>()
         {
@@ -191,10 +167,10 @@ public class GVoxel : Voxel
         foreach (var direction in directions)
         {
             RaycastHit hit;
-            int layerMask = 9;
+            //int layerMask = 9;
 
             //Make sure only the voxels that represent physical opbjects can hit (either disable colliders or put the other voxels into the ignoreraycast layer)
-            if (Physics.Raycast(VoxelCollider.transform.position, direction, out hit, maxRayLength, layerMask))
+            if (Physics.Raycast(VoxelCollider.transform.position, direction, out hit, maxRayLength, LayerMask.GetMask("Boundary")))
             {
                 //get distance from centre of the voxel to the hit  
                 var distance = hit.distance;
@@ -213,44 +189,6 @@ public class GVoxel : Voxel
         return LightScore;
     }
 
-    //public void SetMode(int m)
-    //{
-    //    mode = m;
-    //    ChangeColour();
-    //}
-
-    //public void ChangeColour()
-    //{
-    //    switch (mode)
-
-    //    {
-    //        case 0:
-    //            sprRend.color = new Color(_state, _state, _state);
-    //            break;
-    //        case 1:
-    //            if (_state == 1)
-    //            {
-    //                age += 0.03f;
-    //            }
-    //            sprRend.color = new Color(0, age, age);
-    //            break;
-    //        case 2:
-    //            if (_state == 1)
-    //            {
-    //                age += 0.03f;
-    //                sprRend.color = new Color(0, age + _state, age + _state);
-    //            }
-    //            else
-    //            {
-    //                //age -= 0.01f;
-    //                sprRend.color = new Color(0, age, age);
-    //            }
-    //            break;
-    //        case 3:
-    //            sprRend.color = col[currentRule];
-    //            break;
-    //    }
-    //}
 
 
     #endregion
