@@ -174,7 +174,7 @@ public class GVoxel : Voxel
             {
                 //get distance from centre of the voxel to the hit  
                 var distance = hit.distance;
-                Debug.Log(distance);
+                //Debug.Log(distance);
                 //add distance to lightscore
                 LightScore += distance;
             }

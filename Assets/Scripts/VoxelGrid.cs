@@ -499,7 +499,7 @@ public class VoxelGrid
                             tempVoxels.Add(neighbour);
                         }
                     }
-                    Debug.Log(tempVoxels.Count);
+                    //Debug.Log(tempVoxels.Count);
                 }
                 availableVoxels.AddRange(tempVoxels);
             }

@@ -29,6 +29,7 @@ public class EnvironmentManager : MonoBehaviour
 
 
     List<GVoxel> _originalPath;
+    List<Voxel> _updatedPlot;
 
     #endregion
 
@@ -102,12 +103,13 @@ public class EnvironmentManager : MonoBehaviour
 
         }
 
-        if (Input.GetKeyDown(KeyCode.C))
+        if (Input.GetKeyDown(KeyCode.U))
         {
             //SetRandomAliveVoxels(1);
-            SetRandomVoxels();
+            UpdatedGrid();
         }
 
+        //UpdatedGrid();
 
     }
 
@@ -263,7 +265,6 @@ public class EnvironmentManager : MonoBehaviour
 
         }
        
-
     }
 
     #endregion
@@ -274,7 +275,7 @@ public class EnvironmentManager : MonoBehaviour
     {
         Queue<GVoxel> targetPool = new Queue<GVoxel>(_targets);
         var edges = _voxelGrid.GetEdgesByTypes(FunctionColor.Blue, FunctionColor.White);
-        Debug.Log(edges.Count);
+        //Debug.Log(edges.Count);
 
         UndirecteGraph<GVoxel, Edge<GVoxel>> graph = new UndirecteGraph<GVoxel, Edge<GVoxel>>(edges);
         Dijkstra<GVoxel, Edge<GVoxel>> dijkstra = new Dijkstra<GVoxel, Edge<GVoxel>>(graph);
@@ -288,7 +289,7 @@ public class EnvironmentManager : MonoBehaviour
             SetNextShortestPath(nextVoxel, dijkstra);
 
         }
-        Debug.Log(_path.Count);
+        //Debug.Log(_path.Count);
         foreach (var voxel in _path)
         {
             voxel.FColor = FunctionColor.White;
@@ -320,6 +321,19 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     #endregion
+
+    public void UpdatedGrid()
+    {
+        for (int x = 0; x < _voxelGrid.GridSize.x; x++)
+        {
+            for (int z = 0; z < _voxelGrid.GridSize.z; z++)
+            {
+                _updatedPlot = _voxelGrid.GetVoxels().Where(v => v.IsActive && v.VoxelCollider.tag == "PlotVoxel").ToList();
+
+                //Debug.Log(_updatedPlot.Count());
+            }
+        }
+    }
 
     public void OcclusionControl(float OcDis)
     {
@@ -389,6 +403,7 @@ public class EnvironmentManager : MonoBehaviour
     public void AdjustAccessibility()
     {
         Maxdistance = (float)AccessSlider.value;
+        
         AccessibilityControl(Maxdistance, 10);
 
     }
