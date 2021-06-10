@@ -18,7 +18,9 @@ public class EnvironmentManager : MonoBehaviour
     List<GVoxel> _targets = new List<GVoxel>();
     List<GVoxel> _pathVoxel = new List<GVoxel>();
     List<GVoxel> _path;
-    public Slider slider;
+    public Slider AreaSlider;
+    public Slider OcclusionSlider;
+    public Slider AccessSlider;
     
 
     public int radius;
@@ -103,7 +105,7 @@ public class EnvironmentManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.C))
         {
             //SetRandomAliveVoxels(1);
-            SetRandomVoxels(3);
+            SetRandomVoxels();
         }
 
 
@@ -175,6 +177,11 @@ public class EnvironmentManager : MonoBehaviour
         _voxelGrid.SetStatesFromImage(_inputImage);
     }
 
+    public void RandomPositionSeed()
+    {
+        SetRandomVoxels();
+    }
+
     #region start voxel
 
     private void SetClickedAsTarget()
@@ -218,33 +225,29 @@ public class EnvironmentManager : MonoBehaviour
         }
     }
 
-    public void SetRandomVoxels(int amount)
+    public void SetRandomVoxels()
     {
         int x = Random.Range(0, _voxelGrid.GridSize.x);
         int z = Random.Range(0, _voxelGrid.GridSize.z);
 
         List<GVoxel> RanVoxel = new List<GVoxel>();
 
-        for (int i = 0; i < amount; i++)
+        Vector3Int idx = new Vector3Int(x, 0, z);
+
+        if (Util.ValidateIndex(_voxelGrid.GridSize, idx))
         {
-            Vector3Int idx = new Vector3Int(x, 0, z);
+            var voxel = _voxelGrid.Voxels[x, 0, z];
 
-            if (Util.ValidateIndex(_voxelGrid.GridSize, idx))
+            if (voxel.IsActive && voxel.FColor == FunctionColor.Blue)
             {
-                var voxel = _voxelGrid.Voxels[x, 0, z];
+                RanVoxel.Add((GVoxel)voxel);
 
-                if (voxel.IsActive && voxel.FColor == FunctionColor.Blue)
-                {
-                    RanVoxel.Add((GVoxel)voxel);
-
-                }
             }
-            //var RanVoxels= GetVoxels().Where(v => v.IsActive && v.FColor == FunctionColor.Blue);
         }
+
         foreach (GVoxel ranV in RanVoxel)
         {
-            //ranV.FColor = FunctionColor.White;
-            //ranV.IsAlive = true;
+
             ranV.SetState(1);
             ranV.SetAsTarget();
 
@@ -259,6 +262,7 @@ public class EnvironmentManager : MonoBehaviour
             }
 
         }
+       
 
     }
 
@@ -310,7 +314,7 @@ public class EnvironmentManager : MonoBehaviour
 
     public void AdjustRadius()
     {
-        radius = (int)slider.value;
+        radius = (int)AreaSlider.value;
         _path = _voxelGrid.GrowPlot(_originalPath, radius);
 
     }
@@ -340,15 +344,15 @@ public class EnvironmentManager : MonoBehaviour
                 plotVV.SetState(0);
                 plotVV.FColor = FunctionColor.Blue;
             }
-            Debug.Log($"Score is {plotVV.LightScore}");
-            Debug.Log($"Min is {Min}");
+            //Debug.Log($"Score is {plotVV.LightScore}");
+            //Debug.Log($"Min is {Min}");
 
         }
     }
 
     public void AdjustOcclusion()
     {
-        Maxdistance = (float)slider.value;
+        Maxdistance = (float)OcclusionSlider.value;
         
         OcclusionControl(Maxdistance);
 
@@ -371,6 +375,11 @@ public class EnvironmentManager : MonoBehaviour
                 plotV.SetState(0);
                 plotV.FColor = FunctionColor.Blue;
             }
+            else
+            {
+                plotV.SetState(1);
+                plotV.FColor = FunctionColor.Yellow;
+            }
 
             //Debug.Log($"Score is {plotV.LightScore}");
         }
@@ -379,8 +388,8 @@ public class EnvironmentManager : MonoBehaviour
 
     public void AdjustAccessibility()
     {
-        Maxdistance = (float)slider.value;
-        AccessibilityControl(Maxdistance,10);
+        Maxdistance = (float)AccessSlider.value;
+        AccessibilityControl(Maxdistance, 10);
 
     }
 
